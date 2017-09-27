@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/intelsdi-x/snap-plugin-collector-dbi",
 	"GoVersion": "go1.5",
-	"GodepVersion": "v62",
+	"GodepVersion": "v79",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -71,6 +71,41 @@
 			"ImportPath": "github.com/intelsdi-x/snap/scheduler/wmap",
 			"Comment": "v0.13.0-beta-77-g5c1177e",
 			"Rev": "5c1177efc47eccc10dc459e3be44083372ea08c3"
+		},
+		{
+			"ImportPath": "github.com/kshvakov/clickhouse",
+			"Comment": "v1.2.3",
+			"Rev": "d76698fe87ff6580e00bffa728acc642879f5116"
+		},
+		{
+			"ImportPath": "github.com/kshvakov/clickhouse/lib/binary",
+			"Comment": "v1.2.3",
+			"Rev": "d76698fe87ff6580e00bffa728acc642879f5116"
+		},
+		{
+			"ImportPath": "github.com/kshvakov/clickhouse/lib/column",
+			"Comment": "v1.2.3",
+			"Rev": "d76698fe87ff6580e00bffa728acc642879f5116"
+		},
+		{
+			"ImportPath": "github.com/kshvakov/clickhouse/lib/data",
+			"Comment": "v1.2.3",
+			"Rev": "d76698fe87ff6580e00bffa728acc642879f5116"
+		},
+		{
+			"ImportPath": "github.com/kshvakov/clickhouse/lib/protocol",
+			"Comment": "v1.2.3",
+			"Rev": "d76698fe87ff6580e00bffa728acc642879f5116"
+		},
+		{
+			"ImportPath": "github.com/kshvakov/clickhouse/lib/types",
+			"Comment": "v1.2.3",
+			"Rev": "d76698fe87ff6580e00bffa728acc642879f5116"
+		},
+		{
+			"ImportPath": "github.com/kshvakov/clickhouse/lib/writebuffer",
+			"Comment": "v1.2.3",
+			"Rev": "d76698fe87ff6580e00bffa728acc642879f5116"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
