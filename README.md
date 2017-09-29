@@ -27,7 +27,7 @@ The plugin is used in the [Snap framework] (http://github.com/intelsdi-x/snap).
 ### System Requirements
 
 - Linux system
-- Access to database (currently the following SQL Drivers are supported: **MySQL**, **PostgreSQL**)
+- Access to database (currently the following SQL Drivers are supported: **MySQL**, **PostgreSQL**, **ClickHouse**)
 
 ### Installation
 #### Download the plugin binary:
