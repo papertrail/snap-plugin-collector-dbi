@@ -19,7 +19,7 @@ package dbi
 import (
 	"errors"
 	"fmt"
-
+	_ "github.com/kshvakov/clickhouse"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 
@@ -31,6 +31,7 @@ import (
 var defaultPort = map[string]string{
 	"mysql":    "3306",
 	"postgres": "5432",
+	"clickhouse": "9000",
 }
 
 // getDefaultPort returns default port for specific driver
@@ -55,6 +56,14 @@ func openDB(db *dtype.Database) error {
 	case "mysql":
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
 			db.Username, db.Password, db.Host, db.Port, db.DBName)
+	case "clickhouse":
+		dsn = fmt.Sprintf("tcp://%s:%s", db.Host, db.Port)
+		if db.Password == "" {
+			dsn = fmt.Sprintf("%s?database=%s", dsn, db.DBName)
+		} else {
+			dsn = fmt.Sprintf("%s?username=%s&password=%sdatabase=%s",
+				dsn, db.Username, db.Password, db.DBName)
+		}
 
 	default:
 		return fmt.Errorf("SQL Driver %s is not supported", db.Driver)
