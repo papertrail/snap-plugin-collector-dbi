@@ -24,10 +24,7 @@ import (
 
 	"github.com/intelsdi-x/snap-plugin-collector-dbi/dbi/dtype"
 	"github.com/intelsdi-x/snap-plugin-collector-dbi/dbi/parser"
-	"github.com/intelsdi-x/snap-plugin-utilities/config"
-	"github.com/intelsdi-x/snap/control/plugin"
-	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
-	"github.com/intelsdi-x/snap/core"
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 )
 
 const (
@@ -35,8 +32,6 @@ const (
 	Name = "dbi"
 	// Version of plugin
 	Version = 4
-	// Type of plugin
-	Type = plugin.CollectorPluginType
 )
 
 // DbiPlugin holds information about the configuration database and defined queries
@@ -47,16 +42,16 @@ type DbiPlugin struct {
 }
 
 // CollectMetrics returns values of desired metrics defined in mts
-func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.MetricType) ([]plugin.MetricType, error) {
+func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
 
 	var err error
-	metrics := []plugin.MetricType{}
+	metrics := []plugin.Metric{}
 	data := map[string]interface{}{}
 
 	// initialization - done once
 	if dbiPlg.initialized == false {
 		// CollectMetrics(mts) is called only when mts has one item at least
-		err = dbiPlg.setConfig(mts[0])
+		err = dbiPlg.setConfig(mts[0].Config)
 		if err != nil {
 			// Cannot obtained sql settings
 			return nil, err
@@ -73,16 +68,11 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.MetricType) ([]plugin.Metri
 		return nil, err
 	}
 
-	for _, m := range mts {
-		if value, ok := data[m.Namespace().String()]; ok {
-			metric := plugin.MetricType{
-				Namespace_: m.Namespace(),
-				Data_:      value,
-				Timestamp_: time.Now(),
-				Tags_:      m.Tags(),
-				Version_:   m.Version(),
-			}
-			metrics = append(metrics, metric)
+	for i, m := range mts {
+		if value, ok := data[m.Namespace.String()]; ok {
+			mts[i].Timestamp = time.Now()
+			mts[i].Data = value
+			metrics = append(metrics, mts[i])
 		}
 
 	}
@@ -91,15 +81,15 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.MetricType) ([]plugin.Metri
 }
 
 // GetConfigPolicy returns config policy
-func (dbiPlg *DbiPlugin) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
-	c := cpolicy.New()
-	return c, nil
+func (dbiPlg *DbiPlugin) GetConfigPolicy() (plugin.ConfigPolicy, error) {
+	policy := plugin.NewConfigPolicy()
+	return *policy, nil
 }
 
 // GetMetricTypes returns metrics types exposed by snap-plugin-collector-dbi
-func (dbiPlg *DbiPlugin) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricType, error) {
+func (dbiPlg *DbiPlugin) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
 	metrics := map[string]interface{}{}
-	mts := []plugin.MetricType{}
+	mts := []plugin.Metric{}
 
 	err := dbiPlg.setConfig(cfg)
 	if err != nil {
@@ -113,7 +103,7 @@ func (dbiPlg *DbiPlugin) GetMetricTypes(cfg plugin.ConfigType) ([]plugin.MetricT
 	}
 
 	for name := range metrics {
-		mts = append(mts, plugin.MetricType{Namespace_: core.NewNamespace(splitNamespace(name)...)})
+		mts = append(mts, plugin.Metric{Namespace: plugin.NewNamespace(splitNamespace(name)...)})
 	}
 
 	return mts, nil
@@ -128,14 +118,14 @@ func New() *DbiPlugin {
 
 // setConfig extracts config item from Global Config or Metric Config, parses its contents (mainly information
 // about databases and queries) and assigned them to appriopriate DBiPlugin fields
-func (dbiPlg *DbiPlugin) setConfig(cfg interface{}) error {
-	setFile, err := config.GetConfigItem(cfg, "setfile")
+func (dbiPlg *DbiPlugin) setConfig(cfg plugin.Config) error {
+	setFile, err := cfg.GetString("setfile")
 	if err != nil {
 		// cannot get config item
 		return err
 	}
 
-	dbiPlg.databases, dbiPlg.queries, err = parser.GetDBItemsFromConfig(setFile.(string))
+	dbiPlg.databases, dbiPlg.queries, err = parser.GetDBItemsFromConfig(setFile)
 	if err != nil {
 		// cannot parse sql config contents
 		return err
