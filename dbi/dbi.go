@@ -31,7 +31,7 @@ const (
 	// Name of plugin
 	Name = "dbi"
 	// Version of plugin
-	Version = 4
+	Version = 5
 )
 
 // DbiPlugin holds information about the configuration database and defined queries
