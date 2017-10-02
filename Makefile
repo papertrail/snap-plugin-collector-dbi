@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+.PHONY: pkg
+
 default:
 	$(MAKE) deps
 	$(MAKE) all
@@ -38,4 +40,6 @@ test-all:
 check:
 	$(MAKE) test
 all:
-	bash -c "./scripts/build.sh"
+	bash -c "./scripts/build.sh code"
+pkg:
+	bash -c "./scripts/build.sh pkg"

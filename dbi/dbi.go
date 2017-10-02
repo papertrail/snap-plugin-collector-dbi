@@ -27,13 +27,6 @@ import (
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 )
 
-const (
-	// Name of plugin
-	Name = "dbi"
-	// Version of plugin
-	Version = 5
-)
-
 // DbiPlugin holds information about the configuration database and defined queries
 type DbiPlugin struct {
 	databases   map[string]*dtype.Database
