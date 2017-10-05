@@ -68,6 +68,7 @@ elif [ "$build_type" = "pkg" ]; then
   version_num=$(tr -s [" "\\t] [" "" "]  < "${__proj_dir}/dbi/metadata.go" | grep "Version = " | cut -d" " -f4)
   mkdir -p pkg/tmp/opt/snap_plugins
   cp -f "${build_dir}/${GOOS}/x86_64/${plugin_name}" pkg/tmp/opt/snap_plugins
+  cp -f "${__proj_dir}/examples/configs/clickhouse_example.json" pkg/tmp/opt/snap_plugins/dbi-collector-plugin-config.json
   (cd ${pkg_dir} && \
   fpm -s dir -C tmp -t deb \
     -n ${plugin_name} \
@@ -78,7 +79,8 @@ elif [ "$build_type" = "pkg" ]; then
     --url "https://www.papertrail.com" \
     --description "DBI plugin for the Intel snap agent" \
     --vendor "Papertrail" \
-    opt/snap_plugins/snap-plugin-collector-dbi)
+    --config-files opt/snap_plugins/dbi-collector-plugin-config.json \
+    opt/snap_plugins/dbi-collector-plugin-config.json opt/snap_plugins/snap-plugin-collector-dbi)
 
 else
   echo "Must pass in a build type of either code or pkg"
