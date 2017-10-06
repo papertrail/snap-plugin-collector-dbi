@@ -29,7 +29,7 @@ import (
 
 // Hard coded because plugin-specific config isn't available in GetMetricTypes
 const (
-	setfilePath = "/opt/snap_plugins/dbi-collector-plugin-config.json"
+	setfilePath = "/opt/snap_plugins/etc/dbi-collector-plugin-config.json"
 )
 
 // DbiPlugin holds information about the configuration database and defined queries
