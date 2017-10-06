@@ -27,6 +27,11 @@ import (
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 )
 
+// Hard coded because plugin-specific config isn't available in GetMetricTypes
+const (
+	setfilePath = "/opt/snap_plugins/etc/dbi-collector-plugin-config.json"
+)
+
 // DbiPlugin holds information about the configuration database and defined queries
 type DbiPlugin struct {
 	databases   map[string]*dtype.Database
@@ -43,8 +48,7 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, e
 
 	// initialization - done once
 	if dbiPlg.initialized == false {
-		// CollectMetrics(mts) is called only when mts has one item at least
-		err = dbiPlg.setConfig(mts[0].Config)
+		err = dbiPlg.setConfig()
 		if err != nil {
 			// Cannot obtained sql settings
 			return nil, err
@@ -84,7 +88,7 @@ func (dbiPlg *DbiPlugin) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, err
 	metrics := map[string]interface{}{}
 	mts := []plugin.Metric{}
 
-	err := dbiPlg.setConfig(cfg)
+	err := dbiPlg.setConfig()
 	if err != nil {
 		// cannot obtained sql settings from Global Config
 		return nil, err
@@ -111,14 +115,9 @@ func New() *DbiPlugin {
 
 // setConfig extracts config item from Global Config or Metric Config, parses its contents (mainly information
 // about databases and queries) and assigned them to appriopriate DBiPlugin fields
-func (dbiPlg *DbiPlugin) setConfig(cfg plugin.Config) error {
-	setFile, err := cfg.GetString("setfile")
-	if err != nil {
-		// cannot get config item
-		return err
-	}
-
-	dbiPlg.databases, dbiPlg.queries, err = parser.GetDBItemsFromConfig(setFile)
+func (dbiPlg *DbiPlugin) setConfig() error {
+	var err error
+	dbiPlg.databases, dbiPlg.queries, err = parser.GetDBItemsFromConfig(setfilePath)
 	if err != nil {
 		// cannot parse sql config contents
 		return err

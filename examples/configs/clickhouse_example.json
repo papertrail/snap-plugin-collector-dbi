@@ -1,0 +1,27 @@
+{ 
+  "queries": [{
+    "name": "test_query",
+    "statement": "select metric, value from metrics where metric = 'MemoryTracking'",
+    "results": [{
+      "name": "test_query_result",
+      "instance_from": "metric",
+      "value_from": "value"
+    }]
+  }],
+
+  "databases": [{
+    "name": "test_db",
+    "driver": "clickhouse",
+    "driver_option": {
+      "host": "localhost",
+      "port": "9000",
+      "username": "default",
+      "password": "",
+      "dbname": "system"
+    },
+    "dbqueries": [{
+      "query": "test_query"
+    }]
+  }]
+}
+
