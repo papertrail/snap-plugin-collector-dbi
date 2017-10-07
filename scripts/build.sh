@@ -62,6 +62,11 @@ elif [ "$build_type" = "pkg" ]; then
 	  exit 1; \
 	}
 
+  type rpmbuild >/dev/null 2>&1 || { \
+	  echo "\033[1;33mrpmbuild is not installed. See the package for your distribution\033[m"; \
+	  exit 1; \
+	}
+
   _debug "removing: ${pkg_dir:?}/*"
   rm -rf "${pkg_dir:?}/"*
 
@@ -73,7 +78,18 @@ elif [ "$build_type" = "pkg" ]; then
   (cd ${pkg_dir} && \
   fpm -s dir -C tmp -t deb \
     -n ${plugin_name} \
-    -m "Papertrails Ops <ops@papertrail.com>" \
+    -m "Papertrail <support@papertrailapp.com>" \
+    -v ${version_num} \
+    -d "snap-telemetry|appoptics-snaptel" \
+    --license "Apache" \
+    --url "https://www.papertrail.com" \
+    --description "DBI plugin for the Intel snap agent" \
+    --vendor "Papertrail" \
+    --config-files opt/snap_plugins/etc/dbi-collector-plugin-config.json \
+    opt/snap_plugins/etc/dbi-collector-plugin-config.json opt/snap_plugins/bin/snap-plugin-collector-dbi && \
+  fpm -s dir -C tmp -t rpm \
+    -n ${plugin_name} \
+    -m "Papertrail <support@papertrailapp.com>" \
     -v ${version_num} \
     -d "snap-telemetry|appoptics-snaptel" \
     --license "Apache" \
@@ -82,6 +98,7 @@ elif [ "$build_type" = "pkg" ]; then
     --vendor "Papertrail" \
     --config-files opt/snap_plugins/etc/dbi-collector-plugin-config.json \
     opt/snap_plugins/etc/dbi-collector-plugin-config.json opt/snap_plugins/bin/snap-plugin-collector-dbi)
+  rm -R -f pkg/tmp
 
 else
   echo "Must pass in a build type of either code or pkg"
