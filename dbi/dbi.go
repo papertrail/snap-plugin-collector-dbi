@@ -32,6 +32,11 @@ const (
 	setfilePath = "/opt/snap_plugins/etc/dbi-collector-plugin-config.json"
 )
 
+type QueryData struct {	
+	value interface{}
+	tags  map[string]string
+}
+
 // DbiPlugin holds information about the configuration database and defined queries
 type DbiPlugin struct {
 	databases   map[string]*dtype.Database
@@ -44,7 +49,7 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, e
 
 	var err error
 	metrics := []plugin.Metric{}
-	data := map[string]interface{}{}
+	data := map[string]QueryData{}
 
 	// initialization - done once
 	if dbiPlg.initialized == false {
@@ -64,11 +69,12 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, e
 	if err != nil {
 		return nil, err
 	}
-
+	
 	for i, m := range mts {
-		if value, ok := data[m.Namespace.String()]; ok {
+		if qdata, ok := data[m.Namespace.String()]; ok {
 			mts[i].Timestamp = time.Now()
-			mts[i].Data = value
+			mts[i].Data = qdata.value
+			mts[i].Tags = qdata.tags
 			metrics = append(metrics, mts[i])
 		}
 
@@ -85,7 +91,7 @@ func (dbiPlg *DbiPlugin) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 
 // GetMetricTypes returns metrics types exposed by snap-plugin-collector-dbi
 func (dbiPlg *DbiPlugin) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
-	metrics := map[string]interface{}{}
+	metrics := map[string]QueryData{}
 	mts := []plugin.Metric{}
 
 	err := dbiPlg.setConfig()
@@ -127,8 +133,8 @@ func (dbiPlg *DbiPlugin) setConfig() error {
 }
 
 // getMetrics returns map with dbi metrics values, where keys are metrics names
-func (dbiPlg *DbiPlugin) getMetrics() (map[string]interface{}, error) {
-	metrics := map[string]interface{}{}
+func (dbiPlg *DbiPlugin) getMetrics() (map[string]QueryData, error) {
+	metrics := map[string]QueryData{}
 
 	err := openDBs(dbiPlg.databases)
 
@@ -155,8 +161,8 @@ func (dbiPlg *DbiPlugin) getMetrics() (map[string]interface{}, error) {
 
 // executeQueries executes all defined queries of each database and returns results as map to its values,
 // where keys are equal to columns' names
-func (dbiPlg *DbiPlugin) executeQueries() (map[string]interface{}, error) {
-	data := map[string]interface{}{}
+func (dbiPlg *DbiPlugin) executeQueries() (map[string]QueryData, error) {
+	data := map[string]QueryData{}
 
 	//execute queries for each defined databases
 	for dbName, db := range dbiPlg.databases {
@@ -179,22 +185,35 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]interface{}, error) {
 
 			for resName, res := range dbiPlg.queries[queryName].Results {
 				instanceOk := false
+				tagOk := false
 				// to avoid inconsistency of columns names caused by capital letters (especially for postgresql driver)
 				instanceFrom := strings.ToLower(res.InstanceFrom)
 				valueFrom := strings.ToLower(res.ValueFrom)
-
+				tagFrom := strings.ToLower(res.TagFrom)
+        
 				if !isEmpty(instanceFrom) {
 					if len(out[instanceFrom]) == len(out[valueFrom]) {
 						instanceOk = true
 					}
 				}
 
+        if !isEmpty(tagFrom) {
+          if len(out[tagFrom]) == len(out[valueFrom]) {
+            tagOk = true
+          }
+        }
+
 				for index, value := range out[valueFrom] {
 					instance := ""
+          tags := map[string]string{}
 
 					if instanceOk {
 						instance = fmt.Sprintf("%v", fixDataType(out[instanceFrom][index]))
 					}
+
+          if tagOk {
+            tags[tagFrom] = fmt.Sprintf("%v", fixDataType(out[tagFrom][index]))
+          }
 
 					key := createNamespace(dbName, resName, res.InstancePrefix, instance)
 
@@ -202,7 +221,7 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]interface{}, error) {
 						return nil, fmt.Errorf("Namespace `%s` has to be unique, but is not", key)
 					}
 
-					data[key] = fixDataType(value)
+					data[key] = QueryData{value: fixDataType(value), tags: tags}
 				}
 			}
 		} // end of range db_queries_to_execute

@@ -34,6 +34,7 @@ type QueryResultType struct {
 	InstanceFrom   string `json:"instance_from"`
 	InstancePrefix string `json:"instance_prefix"`
 	ValueFrom      string `json:"value_from"`
+	TagFrom        string `json:"tag_from"`				
 }
 
 type DatabasesType struct {
