@@ -141,7 +141,7 @@ func (p *Parser) addQuery(qt cfg.QueryType) error {
 			InstanceFrom:   r.InstanceFrom,
 			InstancePrefix: r.InstancePrefix,
 			ValueFrom:      r.ValueFrom,
-			TagFrom:        r.TagFrom,
+			TagsFrom:       r.TagsFrom,
 		}
 
 	} // end of range q.Results

@@ -184,21 +184,23 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]QueryData, error) {
 
 			for resName, res := range dbiPlg.queries[queryName].Results {
 				instanceOk := false
-				tagOk := false
 				// to avoid inconsistency of columns names caused by capital letters (especially for postgresql driver)
 				instanceFrom := strings.ToLower(res.InstanceFrom)
 				valueFrom := strings.ToLower(res.ValueFrom)
-				tagFrom := strings.ToLower(res.TagFrom)
-        
+				tagsFrom := []string{}
+
 				if !isEmpty(instanceFrom) {
 					if len(out[instanceFrom]) == len(out[valueFrom]) {
 						instanceOk = true
 					}
 				}
 
-				if !isEmpty(tagFrom) {
-					if len(out[tagFrom]) == len(out[valueFrom]) {
-						tagOk = true
+				if len(res.TagsFrom) != 0 {
+					for _, t := range res.TagsFrom {
+						tagFrom := strings.ToLower(t)
+						if len(out[tagFrom]) == len(out[valueFrom]) {
+							tagsFrom = append(tagsFrom, tagFrom)
+						}
 					}
 				}
 
@@ -210,8 +212,8 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]QueryData, error) {
 						instance = fmt.Sprintf("%v", fixDataType(out[instanceFrom][index]))
 					}
 
-					if tagOk {
-						tags[tagFrom] = fmt.Sprintf("%v", fixDataType(out[tagFrom][index]))
+					for _, t := range tagsFrom {
+						tags[t] = fmt.Sprintf("%v", fixDataType(out[t][index]))
 					}
 
 					key := createNamespace(dbName, resName, res.InstancePrefix, instance)
