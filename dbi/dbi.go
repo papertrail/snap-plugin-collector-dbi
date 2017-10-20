@@ -204,15 +204,15 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]QueryData, error) {
 
 				for index, value := range out[valueFrom] {
 					instance := ""
-          tags := map[string]string{}
+					tags := map[string]string{}
 
 					if instanceOk {
 						instance = fmt.Sprintf("%v", fixDataType(out[instanceFrom][index]))
 					}
 
-          if tagOk {
-            tags[tagFrom] = fmt.Sprintf("%v", fixDataType(out[tagFrom][index]))
-          }
+					if tagOk {
+						tags[tagFrom] = fmt.Sprintf("%v", fixDataType(out[tagFrom][index]))
+					}
 
 					key := createNamespace(dbName, resName, res.InstancePrefix, instance)
 
