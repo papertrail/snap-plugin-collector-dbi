@@ -33,8 +33,8 @@ const (
 )
 
 type QueryData struct {	
-	value interface{}
-	tags  map[string]string
+  value interface{}
+  tags  map[string]string
 }
 
 // DbiPlugin holds information about the configuration database and defined queries
@@ -77,7 +77,6 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, e
 			mts[i].Tags = qdata.tags
 			metrics = append(metrics, mts[i])
 		}
-
 	}
 
 	return metrics, nil
@@ -197,11 +196,11 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]QueryData, error) {
 					}
 				}
 
-        if !isEmpty(tagFrom) {
-          if len(out[tagFrom]) == len(out[valueFrom]) {
-            tagOk = true
-          }
-        }
+				if !isEmpty(tagFrom) {
+					if len(out[tagFrom]) == len(out[valueFrom]) {
+						tagOk = true
+					}
+				}
 
 				for index, value := range out[valueFrom] {
 					instance := ""
