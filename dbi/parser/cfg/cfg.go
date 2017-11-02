@@ -30,10 +30,11 @@ type QueryType struct {
 }
 
 type QueryResultType struct {
-	ResultName     string `json:"name"`
-	InstanceFrom   string `json:"instance_from"`
-	InstancePrefix string `json:"instance_prefix"`
-	ValueFrom      string `json:"value_from"`
+	ResultName     string 	`json:"name"`
+	InstanceFrom   string 	`json:"instance_from"`
+	InstancePrefix string 	`json:"instance_prefix"`
+	ValueFrom      string 	`json:"value_from"`
+	TagsFrom       []string `json:"tags_from"`
 }
 
 type DatabasesType struct {

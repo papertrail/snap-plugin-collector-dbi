@@ -21,6 +21,8 @@ import (
 	"os"
 	"strings"
 	"time"
+	"bytes"
+	"sort"
 
 	"github.com/intelsdi-x/snap-plugin-collector-dbi/dbi/dtype"
 	"github.com/intelsdi-x/snap-plugin-collector-dbi/dbi/parser"
@@ -31,6 +33,11 @@ import (
 const (
 	setfilePath = "/opt/snap_plugins/etc/dbi-collector-plugin-config.json"
 )
+
+type QueryData struct {	
+  value interface{}
+  tags  map[string]string
+}
 
 // DbiPlugin holds information about the configuration database and defined queries
 type DbiPlugin struct {
@@ -44,7 +51,7 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, e
 
 	var err error
 	metrics := []plugin.Metric{}
-	data := map[string]interface{}{}
+	data := map[string][]QueryData{}
 
 	// initialization - done once
 	if dbiPlg.initialized == false {
@@ -64,14 +71,16 @@ func (dbiPlg *DbiPlugin) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, e
 	if err != nil {
 		return nil, err
 	}
-
+	
 	for i, m := range mts {
-		if value, ok := data[m.Namespace.String()]; ok {
-			mts[i].Timestamp = time.Now()
-			mts[i].Data = value
-			metrics = append(metrics, mts[i])
+		if qdatas, ok := data[m.Namespace.String()]; ok {
+			for _, qdata := range qdatas {
+				mts[i].Timestamp = time.Now()
+				mts[i].Data = qdata.value
+				mts[i].Tags = qdata.tags
+				metrics = append(metrics, mts[i])
+			}
 		}
-
 	}
 
 	return metrics, nil
@@ -85,7 +94,7 @@ func (dbiPlg *DbiPlugin) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 
 // GetMetricTypes returns metrics types exposed by snap-plugin-collector-dbi
 func (dbiPlg *DbiPlugin) GetMetricTypes(cfg plugin.Config) ([]plugin.Metric, error) {
-	metrics := map[string]interface{}{}
+	metrics := map[string][]QueryData{}
 	mts := []plugin.Metric{}
 
 	err := dbiPlg.setConfig()
@@ -127,8 +136,8 @@ func (dbiPlg *DbiPlugin) setConfig() error {
 }
 
 // getMetrics returns map with dbi metrics values, where keys are metrics names
-func (dbiPlg *DbiPlugin) getMetrics() (map[string]interface{}, error) {
-	metrics := map[string]interface{}{}
+func (dbiPlg *DbiPlugin) getMetrics() (map[string][]QueryData, error) {
+	metrics := map[string][]QueryData{}
 
 	err := openDBs(dbiPlg.databases)
 
@@ -155,8 +164,9 @@ func (dbiPlg *DbiPlugin) getMetrics() (map[string]interface{}, error) {
 
 // executeQueries executes all defined queries of each database and returns results as map to its values,
 // where keys are equal to columns' names
-func (dbiPlg *DbiPlugin) executeQueries() (map[string]interface{}, error) {
-	data := map[string]interface{}{}
+func (dbiPlg *DbiPlugin) executeQueries() (map[string][]QueryData, error) {
+	dedupe := map[string]struct{}{}
+	data := map[string][]QueryData{}
 
 	//execute queries for each defined databases
 	for dbName, db := range dbiPlg.databases {
@@ -182,6 +192,7 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]interface{}, error) {
 				// to avoid inconsistency of columns names caused by capital letters (especially for postgresql driver)
 				instanceFrom := strings.ToLower(res.InstanceFrom)
 				valueFrom := strings.ToLower(res.ValueFrom)
+				tagsFrom := []string{}
 
 				if !isEmpty(instanceFrom) {
 					if len(out[instanceFrom]) == len(out[valueFrom]) {
@@ -189,20 +200,42 @@ func (dbiPlg *DbiPlugin) executeQueries() (map[string]interface{}, error) {
 					}
 				}
 
+				if len(res.TagsFrom) != 0 {
+					for _, t := range res.TagsFrom {
+						tagFrom := strings.ToLower(t)
+						if len(out[tagFrom]) == len(out[valueFrom]) {
+							tagsFrom = append(tagsFrom, tagFrom)
+						}
+					}
+				}
+				sort.Strings(tagsFrom)
+
+				var keyWithTags bytes.Buffer
 				for index, value := range out[valueFrom] {
 					instance := ""
+					tags := map[string]string{}
 
 					if instanceOk {
 						instance = fmt.Sprintf("%v", fixDataType(out[instanceFrom][index]))
 					}
 
-					key := createNamespace(dbName, resName, res.InstancePrefix, instance)
-
-					if _, exist := data[key]; exist {
-						return nil, fmt.Errorf("Namespace `%s` has to be unique, but is not", key)
+					for _, t := range tagsFrom {
+						tags[t] = fmt.Sprintf("%v", fixDataType(out[t][index]))
+						keyWithTags.WriteString(tags[t])
+						keyWithTags.WriteString("-")
 					}
 
-					data[key] = fixDataType(value)
+					key := createNamespace(dbName, resName, res.InstancePrefix, instance)
+
+					keyWithTags.WriteString(key)
+					keyWithTagsStr := keyWithTags.String()
+					if _, exist := dedupe[keyWithTagsStr]; exist {
+						return nil, fmt.Errorf("Namespace `%s`  with tags '%s' has to be unique, but is not", key, tags)
+					}
+					dedupe[keyWithTagsStr] = struct{}{}
+					keyWithTags.Reset()
+
+					data[key] = append(data[key], QueryData{value: fixDataType(value), tags: tags})
 				}
 			}
 		} // end of range db_queries_to_execute

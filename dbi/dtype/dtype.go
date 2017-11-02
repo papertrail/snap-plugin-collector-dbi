@@ -49,4 +49,5 @@ type Result struct {
 	InstanceFrom   string
 	InstancePrefix string
 	ValueFrom      string
+	TagsFrom       []string
 }
